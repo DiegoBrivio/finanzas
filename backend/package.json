@@ -1,0 +1,15 @@
+{
+  "name": "finanzas-backend",
+  "version": "1.0.0",
+  "description": "API REST modular para gestión financiera personal y empresarial",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "keywords": ["finance", "finanzas", "api", "sqlite"],
+  "author": "FinanzasApp",
+  "license": "MIT"
+}
+

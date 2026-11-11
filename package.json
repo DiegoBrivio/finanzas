@@ -1,0 +1,17 @@
+{
+  "name": "finanzas-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Plataforma web modular de gestión financiera para personas y empresas",
+  "type": "module",
+  "scripts": {
+    "dev": "node run-all.js",
+    "dev:backend": "node --watch backend/src/server.js",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build": "cd frontend && npm run build",
+    "start": "node backend/src/server.js"
+  },
+  "keywords": ["finanzas", "personal-finance", "business-finance", "react", "nodejs"],
+  "author": "",
+  "license": "MIT"
+}
