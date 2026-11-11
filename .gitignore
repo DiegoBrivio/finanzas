@@ -1,3 +1,6 @@
+# Local node portable
+.node/
+
 # Environment variables
 .env
 .env.local
