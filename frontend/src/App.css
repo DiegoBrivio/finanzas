@@ -807,7 +807,7 @@
 }
 
 .donut-svg {
-  transform: rotate(-90deg);
+  display: block;
 }
 
 .donut-segment {

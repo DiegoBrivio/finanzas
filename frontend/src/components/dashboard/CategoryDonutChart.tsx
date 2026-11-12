@@ -26,70 +26,110 @@ export const CategoryDonutChart: React.FC = () => {
     );
   }
 
-  const totalExpense = categories.reduce((sum, c) => sum + c.amount, 0);
+  const totalExpense = categories.reduce((sum, c) => sum + Number(c.amount || 0), 0);
 
-  // SVG Donut calculation
+  // Dimensiones SVG
   const size = 180;
-  const strokeWidth = 28;
+  const strokeWidth = 24;
+  const center = size / 2;
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
 
-  let accumulatedPercent = 0;
+  // Categoría actualmente seleccionada o hovered
+  const hoveredCategoryData = categories.find(c => c.category === activeCategory);
+
+  // Cálculo acumulado exacto basado en montos reales (sin errores de redondeo)
+  let accumulatedOffset = 0;
 
   return (
     <Card className="chart-card">
       <CardHeader>
         <CardTitle>{isCompany ? 'Estructura de Costos' : 'Desglose por Categoría'}</CardTitle>
         <CardDescription>
-          {isCompany ? 'Distribución porcentual del OPEX' : 'En qué se gasta tu dinero'}
+          {isCompany ? 'Distribución porcentual del OPEX' : 'En qué se distribuye tu dinero'}
         </CardDescription>
       </CardHeader>
 
       <CardContent>
         <div className="donut-layout">
           <div className="donut-svg-wrapper">
-            <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="donut-svg">
-              <circle
-                cx={size / 2}
-                cy={size / 2}
-                r={radius}
-                fill="none"
-                stroke="var(--bg-subtle, #f1f5f9)"
-                strokeWidth={strokeWidth}
-              />
-              {categories.map(cat => {
-                const strokeDasharray = `${(cat.percentage / 100) * circumference} ${circumference}`;
-                const strokeDashoffset = -((accumulatedPercent / 100) * circumference);
-                accumulatedPercent += cat.percentage;
-                const isHovered = activeCategory === cat.category;
+            <svg 
+              width={size} 
+              height={size} 
+              viewBox={`0 0 ${size} ${size}`} 
+              style={{ overflow: 'visible', display: 'block' }}
+            >
+              {/* Grupo rotado exactamente sobre el centro del SVG */}
+              <g transform={`rotate(-90 ${center} ${center})`}>
+                {/* Círculo base de fondo */}
+                <circle
+                  cx={center}
+                  cy={center}
+                  r={radius}
+                  fill="none"
+                  stroke="var(--bg-subtle, #e2e8f0)"
+                  strokeWidth={strokeWidth}
+                />
 
-                return (
-                  <circle
-                    key={cat.category}
-                    cx={size / 2}
-                    cy={size / 2}
-                    r={radius}
-                    fill="none"
-                    stroke={cat.color}
-                    strokeWidth={isHovered ? strokeWidth + 4 : strokeWidth}
-                    strokeDasharray={strokeDasharray}
-                    strokeDashoffset={strokeDashoffset}
-                    className="donut-segment"
-                    onMouseEnter={() => setActiveCategory(cat.category)}
-                    onMouseLeave={() => setActiveCategory(null)}
-                    style={{ transition: 'stroke-width 0.2s ease' }}
-                  />
-                );
-              })}
+                {/* Segmentos de la dona */}
+                {categories.map(cat => {
+                  const amount = Number(cat.amount || 0);
+                  const fraction = totalExpense > 0 ? (amount / totalExpense) : 0;
+                  const strokeDasharray = `${fraction * circumference} ${circumference}`;
+                  const strokeDashoffset = -accumulatedOffset;
+                  accumulatedOffset += fraction * circumference;
+
+                  const isHovered = activeCategory === cat.category;
+                  const isAnyHovered = activeCategory !== null;
+
+                  return (
+                    <circle
+                      key={cat.category}
+                      cx={center}
+                      cy={center}
+                      r={radius}
+                      fill="none"
+                      stroke={cat.color}
+                      strokeWidth={isHovered ? strokeWidth + 4 : strokeWidth}
+                      strokeDasharray={strokeDasharray}
+                      strokeDashoffset={strokeDashoffset}
+                      className="donut-segment"
+                      onMouseEnter={() => setActiveCategory(cat.category)}
+                      onMouseLeave={() => setActiveCategory(null)}
+                      style={{
+                        cursor: 'pointer',
+                        transition: 'stroke-width 0.2s ease, opacity 0.2s ease',
+                        opacity: isAnyHovered ? (isHovered ? 1 : 0.45) : 1
+                      }}
+                    >
+                      <title>{`${cat.category}: ${formatMoney(amount)} (${cat.percentage}%)`}</title>
+                    </circle>
+                  );
+                })}
+              </g>
             </svg>
-            <div className="donut-center-text">
-              <span className="donut-center-label">Total</span>
-              <span className="donut-center-value">{formatMoney(totalExpense)}</span>
+
+            {/* Texto dinámico central */}
+            <div className="donut-center-text" style={{ pointerEvents: 'none' }}>
+              <span className="donut-center-label" style={{ maxWidth: '90px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {hoveredCategoryData ? hoveredCategoryData.category : 'Total'}
+              </span>
+              <span className="donut-center-value">
+                {hoveredCategoryData 
+                  ? formatMoney(hoveredCategoryData.amount)
+                  : formatMoney(totalExpense)}
+              </span>
+              {hoveredCategoryData && (
+                <span style={{ fontSize: '11px', color: hoveredCategoryData.color, fontWeight: 700 }}>
+                  {hoveredCategoryData.percentage}%
+                </span>
+              )}
             </div>
           </div>
 
+          {/* Lista de categorías (leyenda) */}
           <div className="donut-legend-list">
-            {categories.slice(0, 5).map(cat => {
+            {categories.slice(0, 6).map(cat => {
               const isHovered = activeCategory === cat.category;
               return (
                 <div
@@ -97,6 +137,10 @@ export const CategoryDonutChart: React.FC = () => {
                   className={`donut-legend-row ${isHovered ? 'active' : ''}`}
                   onMouseEnter={() => setActiveCategory(cat.category)}
                   onMouseLeave={() => setActiveCategory(null)}
+                  style={{
+                    backgroundColor: isHovered ? 'var(--bg-subtle)' : 'transparent',
+                    cursor: 'pointer'
+                  }}
                 >
                   <div className="legend-row-left">
                     <span className="donut-legend-pill" style={{ backgroundColor: cat.color }} />
@@ -115,4 +159,3 @@ export const CategoryDonutChart: React.FC = () => {
     </Card>
   );
 };
-
